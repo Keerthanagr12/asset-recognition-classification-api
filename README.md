@@ -265,6 +265,175 @@ pipi install gunicorn
 gunicorn src.app:app --worker-class uvicorn.workers.UvicornWorker --workers 4
 ```
 
+
+## 📊 Dataset & Data Splits
+
+**Dataset Source**: [E-commerce Product Images (18K)](https://www.kaggle.com/datasets/fatihkgg/ecommerce_product_images_18k)
+
+This project uses the publicly available **Kaggle E-commerce Product Images dataset**:
+- **Total Images**: 18,000 product images
+- **Training**: 14,400 images (80%)
+- **Validation**: 1,800 images (10%)
+- **Test**: 1,800 images (10%)
+
+### Category Mapping
+The 8 asset classes are derived from the dataset's product categories:
+
+| Index | Category | Example Products |
+|-------|----------|------------------|
+| 0 | **Electronics** | Smartphones, Laptops, Tablets, Cameras |
+| 1 | **Clothing** | Shirts, Dresses, Pants, Jackets |
+| 2 | **Books** | Textbooks, Novels, Comics |
+| 3 | **Furniture** | Chairs, Tables, Cabinets, Desks |
+| 4 | **Toys** | Action Figures, Puzzles, Dolls |
+| 5 | **Sports** | Balls, Bats, Sneakers, Yoga Mats |
+| 6 | **Home Appliances** | Toasters, Blenders, Coffee Makers |
+| 7 | **Accessories** | Bags, Belts, Watches, Scarves |
+
+### Download & Prepare Dataset
+
+To reproduce the results, download the dataset:
+
+```bash
+# Option 1: Using Kaggle CLI
+kaggle datasets download -d fatihkgg/ecommerce_product_images_18k
+unzip ecommerce_product_images_18k.zip -d data/
+
+# Option 2: Manual download from Kaggle website
+# 1. Visit https://www.kaggle.com/datasets/fatihkgg/ecommerce_product_images_18k
+# 2. Click "Download" button
+# 3. Extract to `data/` folder
+```
+
+## 🔬 How to Reproduce Results
+
+### Step 1: Environment Setup
+
+```bash
+# Clone repository
+git clone https://github.com/Keerthanagr12/asset-recognition-classification-api
+cd asset-recognition-classification-api
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Step 2: Training (Reproduce 92.5% Accuracy)
+
+```bash
+# Navigate to notebooks directory
+cd notebooks
+
+# Launch Jupyter and run training notebook
+jupyter notebook train.ipynb
+
+# OR run directly with Python
+python -m nbconvert --to notebook --execute train.ipynb
+```
+
+**Training Configuration** (see `train.ipynb`):
+- **Model**: 3-layer CNN (32→64→128 channels)
+- **Optimizer**: Adam (lr=0.001)
+- **Batch Size**: 32
+- **Epochs**: 50 (with early stopping)
+- **Loss Function**: CrossEntropyLoss
+- **Device**: GPU (auto-detected) or CPU
+- **Expected Time**: ~15-20 minutes on GPU, ~1 hour on CPU
+- **Output**: Saves trained model to `../model.pth`
+
+### Step 3: Start API Server
+
+```bash
+# From project root directory
+cd src
+python -m uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+
+# Or run directly
+python app.py
+```
+
+API will be available at: `http://localhost:8000`
+
+### Step 4: Test Predictions
+
+Visit the **Swagger UI** at: `http://localhost:8000/docs`
+
+Or test via cURL:
+
+```bash
+# Single image prediction
+curl -X POST "http://localhost:8000/predict" \
+  -F "file=@test_image.jpg"
+
+# Expected Response (92.5% accuracy on test set):
+# {
+#   "label": "Electronics",
+#   "confidence": 0.9823,
+#   "class_idx": 0,
+#   "all_predictions": {
+#     "Electronics": 0.9823,
+#     "Clothing": 0.0089,
+#     "Books": 0.0045,
+#     "Furniture": 0.0032,
+#     "Toys": 0.0008,
+#     "Sports": 0.0002,
+#     "Home Appliances": 0.0001,
+#     "Accessories": 0.0000
+#   }
+# }
+```
+
+## 📸 API Response Example
+
+### Single Image Prediction Response
+
+```json
+{
+  "label": "Electronics",
+  "confidence": 0.9823,
+  "class_idx": 0,
+  "all_predictions": {
+    "Electronics": 0.9823,
+    "Clothing": 0.0089,
+    "Books": 0.0045,
+    "Furniture": 0.0032,
+    "Toys": 0.0008,
+    "Sports": 0.0002,
+    "Home Appliances": 0.0001,
+    "Accessories": 0.0000
+  }
+}
+```
+
+### Batch Prediction Response
+
+```json
+{
+  "results": [
+    {
+      "filename": "phone.jpg",
+      "label": "Electronics",
+      "confidence": 0.9823
+    },
+    {
+      "filename": "shirt.jpg",
+      "label": "Clothing",
+      "confidence": 0.8765
+    },
+    {
+      "filename": "book.jpg",
+      "label": "Books",
+      "confidence": 0.9421
+    }
+  ]
+}
+```
+
+
 ## 🎓 Learning Outcomes
 
 This project demonstrates:
